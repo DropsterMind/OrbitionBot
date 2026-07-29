@@ -1,5 +1,6 @@
 import requests
 import time
+import json
 from datetime import datetime, timedelta
 import sys
 import os
@@ -12,6 +13,7 @@ AKUN_FILE = 'akun.txt'
 PROXIES_FILE = 'proxies.txt'
 COOLDOWN_HOURS = 24
 DELAY_BETWEEN_ACCOUNTS = 3  # Delay in seconds between accounts
+DELAY_BETWEEN_QUESTS = 2    # Delay in seconds between completing quests
 # Terminal Colors
 C_GREEN = '\033[92m'
 C_YELLOW = '\033[93m'
@@ -55,6 +57,27 @@ def start_mining(token, proxy_dict=None):
         print(f"{C_RED}    [!] Error Start Mining: {e}{C_RESET}")
     return None
 
+def get_quests(token, proxy_dict=None):
+    url = "https://api-airdrop.orbition.network/api/quests"
+    try:
+        res = requests.get(url, headers=get_headers(token), proxies=proxy_dict, timeout=15)
+        if res.status_code == 200:
+            return res.json().get('quests', [])
+    except Exception as e:
+        print(f"{C_RED}    [!] Error Fetching Quests: {e}{C_RESET}")
+    return []
+
+def verify_quest(token, quest_id, proxy_dict=None):
+    url = "https://api-airdrop.orbition.network/api/quests/verify"
+    payload = {"questId": quest_id}
+    try:
+        res = requests.post(url, headers=get_headers(token), json=payload, proxies=proxy_dict, timeout=15)
+        if res.status_code == 200:
+            return res.json()
+    except Exception as e:
+        print(f"{C_RED}    [!] Error Verifying Quest {quest_id}: {e}{C_RESET}")
+    return None
+
 def format_time(ms_timestamp):
     if ms_timestamp == 0:
         return "Never started"
@@ -87,7 +110,6 @@ def main():
     # Membaca file token
     try:
         with open(AKUN_FILE, 'r') as file:
-            # Membersihkan token dari kata "Bearer " jika user tidak sengaja memasukkannya
             tokens = [line.strip().replace("Bearer ", "").replace("bearer ", "") for line in file if line.strip()]
     except FileNotFoundError:
         print(f"{C_RED}[!] File {AKUN_FILE} not found!{C_RESET}")
@@ -131,7 +153,7 @@ def main():
             else:
                 print(f"{C_CYAN}[Account {account_num}] | Direct Connection{C_RESET}")
 
-            # Fetch User Data
+            # 1. Fetch User Data
             user = get_user_info(token, proxy_dict)
             if not user:
                 print(f"{C_RED}    -> Failed to fetch data, skipping...{C_RESET}")
@@ -144,9 +166,42 @@ def main():
             mining_start_time = user.get('mining_start', 0)
             mining_claimed = user.get('mining_claimed', 0)
             server_now = user.get('server_now', int(time.time() * 1000))
+            
+            # Parsing Completed Quests
+            completed_quests_raw = user.get('completed_quests', "[]")
+            completed_quests = []
+            try:
+                # Menangani format "[1,2,3]" menjadi list python
+                if completed_quests_raw:
+                    completed_quests = json.loads(completed_quests_raw)
+            except:
+                pass
 
             print(f"    -> Wallet: {wallet_short} | Points: {points}")
 
+            # 2. Auto Complete Quests
+            available_quests = get_quests(token, proxy_dict)
+            if available_quests:
+                quests_to_do = [q for q in available_quests if q.get('id') not in completed_quests and q.get('is_active') == 1]
+                
+                if quests_to_do:
+                    print(f"{C_YELLOW}    -> Found {len(quests_to_do)} uncompleted tasks. Processing...{C_RESET}")
+                    for q in quests_to_do:
+                        q_id = q.get('id')
+                        q_title = q.get('title')
+                        
+                        v_res = verify_quest(token, q_id, proxy_dict)
+                        if v_res and v_res.get('success'):
+                            reward = v_res.get('reward', 0)
+                            print(f"{C_GREEN}       [+] Task '{q_title}' Done! Reward: {reward} Points{C_RESET}")
+                        else:
+                            print(f"{C_RED}       [-] Failed Task '{q_title}'{C_RESET}")
+                        
+                        time.sleep(DELAY_BETWEEN_QUESTS)
+                else:
+                    print(f"{C_GREEN}    -> All tasks are already completed!{C_RESET}")
+
+            # 3. Mining Logic
             cooldown_ms = COOLDOWN_HOURS * 60 * 60 * 1000
             end_time_ms = mining_start_time + cooldown_ms
             remaining_time_ms = end_time_ms - server_now
