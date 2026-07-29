@@ -7,10 +7,11 @@ A Python-based automation script for managing multiple Orbition Network accounts
 ## ✨ Features
 
 - **Multi-Account Support:** Easily manage multiple accounts by adding tokens to a text file.
-- **Proxy Support (NEW):** Map different proxies to your accounts to prevent IP bans. Includes an interactive menu to run with or without proxies.
+- **Proxy Support:** Map different proxies to your accounts to prevent IP bans. Includes an interactive menu to run with or without proxies.
+- **Auto-Complete Quests (NEW):** Automatically detects uncompleted tasks/quests from the server and finishes them to maximize your point earnings.
 - **Smart Auto-Sleep:** Calculates the exact time when the next account finishes mining and puts the bot to sleep to save resources.
-- **Colorful & Informative Logs:** Real-time, easy-to-read terminal output with status updates, point balances, and countdown timers.
-- **24/7 Automation:** Just run it and leave it. The bot will handle the 24-hour mining cycles automatically.
+- **Colorful & Informative Logs:** Real-time, easy-to-read terminal output with status updates, point balances, quest rewards, and countdown timers.
+- **24/7 Automation:** Just run it and leave it. The bot will handle the 24-hour mining cycles and task completions automatically.
 
 ## 🛠️ Prerequisites
 
