@@ -2,7 +2,7 @@
 
 **Orbition Bot by DropsterMind**
 
-A Python-based automation script for managing multiple Orbition Network accounts. The bot automatically checks your mining status, starts mining if idle, and intelligently sleeps until the next account is ready to mine. It now also supports proxy rotation to keep your accounts safe.
+A Python-based automation script for managing multiple Orbition Network accounts. The bot automatically checks your mining status, completes available social and engagement tasks (quests), starts mining if idle, and intelligently sleeps until the next account is ready to mine. It also supports proxy rotation to keep your accounts safe.
 
 ## ✨ Features
 
